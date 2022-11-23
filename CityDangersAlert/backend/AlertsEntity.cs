@@ -12,12 +12,14 @@ namespace api
 
         public AlertsEntity() { }
 
-        public string? coordonate_x { get; set; }
+        public string? Coordonate_x { get; set; }
 
-        public string? coordonate_y { get; set; }
+        public string? Coordonate_y { get; set; }
 
-        public string? descriere { get; set; }
+        public string? Descriere { get; set; }
 
-        public string? poza { get; set; }
+        public string? Poza { get; set; }
+
+        public string? Status { get; set; }
     }
 }

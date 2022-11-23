@@ -18,7 +18,7 @@ namespace api {
         public LoginTable()  
         {  
             //Settings
-            _settings = new AzureTableSettings("alexbdatc", "VxB7/Pb2K/X730xZAVX1AvxM+bhrVWDLsQ9XGbogGQ3YLfYkX+h9cKkRtGFdk+CkAjQNQqPdus1y+AStPWq4+g==", "Students");
+            _settings = new AzureTableSettings("datcproject", "EUnZwTKlqErqdeuMF/N8mfgEYmO3IubexgXpC/vCGSNmM4slSH7vYsHW2TNzTSWSGQ+SLAZm7uLT+AStI1fYKg==", "Users");
             
             //Account  
             _storageAccount = new CloudStorageAccount(new StorageCredentials(_settings.StorageAccount, _settings.StorageKey), false);  
@@ -30,6 +30,25 @@ namespace api {
             _loginTable = _tableClient.GetTableReference(_settings.TableName);
             Task.Run(async () => { await _loginTable.CreateIfNotExistsAsync(); }).GetAwaiter().GetResult();
         } 
+
+        public async Task<List<LoginEntity>> GetAllUsers()
+        {
+            var users = new List<LoginEntity>();
+
+            TableQuery<LoginEntity> query = new TableQuery<LoginEntity>(); //.Where(TableQuery.GenerateFilterCondition("FirstName", QueryComparisons.Equal, "Istvan"));
+
+            TableContinuationToken? token = null;
+            do
+            {
+                TableQuerySegment<LoginEntity> resultSegment = await _loginTable.ExecuteQuerySegmentedAsync(query, token);
+                token = resultSegment.ContinuationToken;
+
+                users.AddRange(resultSegment.Results);
+
+            } while (token != null);
+
+            return users;
+        }
 
         public async Task<LoginEntity> GetUserById(string id)
         {

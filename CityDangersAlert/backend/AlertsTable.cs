@@ -18,7 +18,7 @@ namespace api {
         public AlertsTable()  
         {  
             //Settings
-            _settings = new AzureTableSettings("alexbdatc", "VxB7/Pb2K/X730xZAVX1AvxM+bhrVWDLsQ9XGbogGQ3YLfYkX+h9cKkRtGFdk+CkAjQNQqPdus1y+AStPWq4+g==", "Students");
+            _settings = new AzureTableSettings("datcproject", "EUnZwTKlqErqdeuMF/N8mfgEYmO3IubexgXpC/vCGSNmM4slSH7vYsHW2TNzTSWSGQ+SLAZm7uLT+AStI1fYKg==", "Alerts");
             
             //Account  
             _storageAccount = new CloudStorageAccount(new StorageCredentials(_settings.StorageAccount, _settings.StorageKey), false);  
