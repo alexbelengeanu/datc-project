@@ -14,9 +14,18 @@ namespace api {
         private CloudStorageAccount? _storageAccount;
         private CloudTableClient? _tableClient;
         private CloudTable? _loginTable;
+        private ConversionHandler? _myConverter;
+        private MACHandler _mh;
+        private string? passwordKey;
 
         public LoginTable()  
         {  
+            //Password type converter
+            _myConverter = new ConversionHandler();
+
+            //MacHandler
+            _mh = new MACHandler();
+
             //Settings
             _settings = new AzureTableSettings("datcproject", "EUnZwTKlqErqdeuMF/N8mfgEYmO3IubexgXpC/vCGSNmM4slSH7vYsHW2TNzTSWSGQ+SLAZm7uLT+AStI1fYKg==", "Users");
             
@@ -54,8 +63,12 @@ namespace api {
         {
             var ids = id.Split('-');
             var partitionKey = ids[0];
-            var rowKey = ids[1];
+            //var rowKey = ids[1];
 
+            // Hash rowKey here and check for it in the database
+            byte[] hash = _mh.ComputeHash(_myConverter.StringToByteArray(ids[1]));
+            var rowKey = _myConverter.ByteArrayToHexString(hash);
+            
             var query = TableOperation.Retrieve<LoginEntity>(partitionKey, rowKey);
 
             var result = await _loginTable.ExecuteAsync(query);
@@ -65,6 +78,10 @@ namespace api {
 
         public async Task InsertUser(LoginEntity user)
         {
+            // Hash rowKey here and modify it in the 'user' entity before insert
+            byte[] hash = _mh.ComputeHash(_myConverter.StringToByteArray(user.RowKey));
+            user.RowKey = _myConverter.ByteArrayToHexString(hash);
+
             var insertOperation = TableOperation.Insert(user);
 
             await _loginTable.ExecuteAsync(insertOperation);
