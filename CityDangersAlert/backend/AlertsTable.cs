@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
+using Azure.Messaging.ServiceBus;
+
 
 namespace api {
     public class AlertsTable : IAlertsTable {
@@ -15,8 +17,20 @@ namespace api {
         private CloudTableClient? _tableClient;
         private CloudTable? _alertsTable;
 
+        // the client that owns the connection and can be used to create senders and receivers
+        ServiceBusClient client;
+        // the sender used to publish messages to the queue
+        ServiceBusSender sender;
+
         public AlertsTable()  
         {  
+            var clientOptions = new ServiceBusClientOptions()
+            { 
+                TransportType = ServiceBusTransportType.AmqpWebSockets
+            };
+            client = new ServiceBusClient("Endpoint=sb://datc-project-mq.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=Z9xd7HxiJUmO+JJEx/4SygysvfUE+IPiSBWOWJ5U5rw=", clientOptions);
+            sender = client.CreateSender("alerts");
+
             //Settings
             _settings = new AzureTableSettings("datcproject", "EUnZwTKlqErqdeuMF/N8mfgEYmO3IubexgXpC/vCGSNmM4slSH7vYsHW2TNzTSWSGQ+SLAZm7uLT+AStI1fYKg==", "Alerts");
             
@@ -65,9 +79,22 @@ namespace api {
 
         public async Task InsertAlert(AlertsEntity alert)
         {
-            var insertOperation = TableOperation.Insert(alert);
+            string message = alert.PartitionKey + "-"  + alert.RowKey + "-"  + alert.ETag + "-"  + alert.Timestamp + "-"  + alert.Descriere + "-"  + alert.Status;
+            try
+            {
+                // Use the producer client to send the batch of messages to the Service Bus queue
+                await sender.SendMessageAsync(new ServiceBusMessage(message));
+            }
+            finally
+            {
+                // Calling DisposeAsync on client types is required to ensure that network
+                // resources and other unmanaged objects are properly cleaned up.
+                await sender.DisposeAsync();
+                await client.DisposeAsync();
+            }
 
-            await _alertsTable.ExecuteAsync(insertOperation);
+            //var insertOperation = TableOperation.Insert(alert);
+            //await _alertsTable.ExecuteAsync(insertOperation);
         }
 
         public async Task DeleteAlert(string id)
